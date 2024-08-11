@@ -2,9 +2,7 @@ package main
 
 import (
 	"bufio"
-	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
 	"math/big"
@@ -15,7 +13,6 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -214,7 +211,7 @@ func addMessage(sender string,receiver string, message string) {
 func sendMessage(message string){
 	key, cipherText, err := OTPEncrypt([]byte(message))
 	handleErr(err)
-	cipherKey, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, peerPublicKey, []byte(key), nil)
+	cipherKey, err := EncryptOAEP([]byte(key), nil, peerPublicKey)
 	handleErr(err)
 	encodedEncryptedKey := base64.StdEncoding.EncodeToString(cipherKey)
 	encodedCipherText := base64.StdEncoding.EncodeToString(cipherText)
@@ -223,6 +220,7 @@ func sendMessage(message string){
 		handleErr(err)
 	}()
 	addMessage(myUsername, peerUsername, message)
+	messageList.ScrollToBottom()
 	go storeMessage(myUsername, peerUsername, message)
 }
 
@@ -230,30 +228,30 @@ func showChatWindow(window fyne.Window) {
 	chatInput := widget.NewEntry()
 	chatInput.SetPlaceHolder("Enter your message")
 	// on enter
-	chatInput.OnSubmitted = func (message string){
+	chatInput.OnSubmitted = func(message string) {
 		sendMessage(message)
 		chatInput.SetText("")
 	}
+
 	// on send button clicked
 	sendButton := widget.NewButton("Send", func() {
 		message := chatInput.Text
 		sendMessage(message)
 		chatInput.SetText("")
 	})
-
 	// Create a custom widget for chat messages
 	createMessageBubble := func(sender, message string) fyne.CanvasObject {
-		var messageBubble *fyne.Container
+		var senderLabel *widget.Label
+		var messageLabel *widget.Label
 		if(sender == myUsername){
-			senderLabel := widget.NewLabelWithStyle(sender, fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
-			messageLabel := widget.NewLabelWithStyle(message, fyne.TextAlignLeading,fyne.TextStyle{})
-			messageBubble = container.NewVBox(senderLabel, messageLabel)
+			senderLabel = widget.NewLabelWithStyle(sender, fyne.TextAlignTrailing, fyne.TextStyle{Bold: true})
+			messageLabel = widget.NewLabelWithStyle(message, fyne.TextAlignTrailing, fyne.TextStyle{Bold: false})	
 		}else{
-			senderLabel := widget.NewLabelWithStyle(sender, fyne.TextAlignTrailing, fyne.TextStyle{Bold: true})
-			messageLabel := widget.NewLabelWithStyle(message, fyne.TextAlignTrailing,fyne.TextStyle{})
-			messageBubble = container.NewVBox(senderLabel, messageLabel)
+			senderLabel = widget.NewLabelWithStyle(sender, fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
+			messageLabel = widget.NewLabelWithStyle(message, fyne.TextAlignLeading, fyne.TextStyle{Bold: false})	
 		}
-		return container.NewHBox(layout.NewSpacer(), messageBubble)
+		messageBubble := container.NewVBox(senderLabel, messageLabel)
+		return messageBubble
 	}
 
 	messageList = widget.NewList(
@@ -263,33 +261,39 @@ func showChatWindow(window fyne.Window) {
 			return len(messages)
 		},
 		func() fyne.CanvasObject {
+			// Return the message bubble directly
 			return createMessageBubble("", "")
 		},
 		func(i widget.ListItemID, o fyne.CanvasObject) {
 			messagesMutex.Lock()
 			defer messagesMutex.Unlock()
 			message := messages[i]
+			
+			// Ensure that 'o' is correctly handled
 			messageContainer := o.(*fyne.Container)
-			messageBubble := messageContainer.Objects[0].(*fyne.Container)
-			senderLabel := messageBubble.Objects[0].(*widget.Label)
-			messageLabel := messageBubble.Objects[1].(*widget.Label)
-
-			senderLabel.SetText(message.Sender)
-			messageLabel.SetText(message.Message)
+			messageContainer.Objects = []fyne.CanvasObject{createMessageBubble(message.Sender, message.Message)}
+			messageContainer.Refresh()
 		},
 	)
-	messageList.Resize(fyne.NewSize(700, 600))
+
+	messageList.Resize(fyne.NewSize(700, 450))
 	messageList.ScrollToBottom()
-	messageContainer := container.NewVBox(
+	inputSection := container.NewWithoutLayout(chatInput, sendButton)
+	chatInput.Resize(fyne.NewSize(600, 50))
+	chatInput.Move(fyne.NewPos(0, 0))
+	sendButton.Resize(fyne.NewSize(100, 50))
+	sendButton.Move(fyne.NewPos(600, 0))
+	inputSection.Move(fyne.NewPos(0, 450))
+	inputSection.Resize(fyne.NewSize(700, 50))
+	messageContainer := container.NewWithoutLayout(
 		messageList,
-		chatInput,
-		sendButton,
+		inputSection,
 	)
-	window.SetContent(container.NewVBox(
-		messageContainer,
-	))
-	window.Resize(fyne.NewSize(700, 700))
+
+	window.SetContent(messageContainer)
+	window.Resize(fyne.NewSize(700, 500))
 }
+
 
 func showRegisterForm(window fyne.Window) *fyne.Container {
     usernameEntry := widget.NewEntry()
@@ -512,13 +516,14 @@ func receiveMessage(conn net.Conn) {
 			showChatWindow(window)
 		case "MESSAGE":
 			decodedEncryptedKey, _ := base64.StdEncoding.DecodeString(content[0])
-			key, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privateKey, decodedEncryptedKey, nil)
+			key, err := DecryptOAEP(decodedEncryptedKey , nil, privateKey)
 			handleErr(err)
 			decodedCipherText, _ := base64.StdEncoding.DecodeString(content[1])
 			message := OTPDecrypt(key, decodedCipherText)
 			fmt.Printf("%s > %s\n", peerUsername, message)
 			go storeMessage(peerUsername, myUsername, string(message))
 			addMessage( peerUsername,myUsername, string(message))
+			messageList.ScrollToBottom()
 		}
 	}
 }

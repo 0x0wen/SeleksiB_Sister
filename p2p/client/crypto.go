@@ -6,12 +6,96 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
 	"io"
 	"math/big"
 )
 
+// xorBytes performs a byte-wise XOR operation on two byte slices.
+func xorBytes(a, b []byte) []byte {
+	n := len(a)
+	if len(b) < n {
+		n = len(b)
+	}
+
+	out := make([]byte, n)
+	for i := 0; i < n; i++ {
+		out[i] = a[i] ^ b[i]
+	}
+	return out
+}
+
+// mgf1 is the mask generation function based on SHA-256.
+func mgf1(seed []byte, length int) []byte {
+	var counter uint32
+	mask := make([]byte, length)
+
+	hashLen := sha256.Size
+	for i := 0; i < length; i += hashLen {
+		counterBytes := []byte{byte(counter >> 24), byte(counter >> 16), byte(counter >> 8), byte(counter)}
+		h := sha256.New()
+		h.Write(seed)
+		h.Write(counterBytes)
+		copy(mask[i:], h.Sum(nil))
+		counter++
+	}
+
+	return mask
+}
+
+// oaepPad applies the OAEP padding to the message.
+func oaepPad(message, label []byte, k int) ([]byte, error) {
+	hash := sha256.New()
+	hLen := hash.Size()
+
+	// Check if the message length is valid
+	if len(message) > k-2*hLen-2 {
+		return nil, fmt.Errorf("message too long")
+	}
+
+	lHash := sha256.Sum256(label)
+	ps := make([]byte, k-2*hLen-2-len(message))
+	db := append(append(lHash[:], ps...), 0x01)
+	db = append(db, message...)
+
+	seed := make([]byte, hLen)
+	_, err := rand.Read(seed)
+	if err != nil {
+		return nil, err
+	}
+
+	dbMask := mgf1(seed, len(db))
+	maskedDB := xorBytes(db, dbMask)
+	seedMask := mgf1(maskedDB, hLen)
+	maskedSeed := xorBytes(seed, seedMask)
+
+	em := append(append([]byte{0x00}, maskedSeed...), maskedDB...)
+	return em, nil
+}
+
+// rsaEncrypt performs the RSA encryption: ciphertext = (message^e) mod n
+func rsaEncrypt(message []byte, e int, n *big.Int) *big.Int {
+	m := new(big.Int).SetBytes(message)
+	c := new(big.Int).Exp(m, big.NewInt(int64(e)), n)
+	return c
+}
+
+// implements the RSA-OAEP encryption.
+func EncryptOAEP(message, label []byte, pubKey *rsa.PublicKey) ([]byte, error) {
+	k := (pubKey.N.BitLen() + 7) / 8
+
+	// Apply OAEP padding
+	em, err := oaepPad(message, label, k)
+	if err != nil {
+		return nil, err
+	}
+
+	// Perform RSA encryption
+	ciphertext := rsaEncrypt(em, pubKey.E, pubKey.N)
+	return ciphertext.Bytes(), nil
+}
 func GenerateAsymmetricCryptoKeys(bits int) (*rsa.PrivateKey, *rsa.PublicKey) {
 	e := 65537 // Common choice for public exponent
 	bigE := big.NewInt(int64(e))
@@ -131,4 +215,87 @@ func decryptAES(key []byte, cipherText string) (string, error) {
     mode.CryptBlocks(encryptedData, encryptedData)
 	result,err :=pkcs7Unpad(encryptedData, aes.BlockSize)
     return string(result),err
+}
+
+// oaepUnpad reverses the OAEP padding process and extracts the original message.
+func oaepUnpad(em, label []byte, k int) ([]byte, error) {
+	hash := sha256.New()
+	hLen := hash.Size()
+
+	if len(em) != k {
+		return nil, fmt.Errorf("decryption error")
+	}
+
+	lHash := sha256.Sum256(label)
+
+	maskedSeed := em[1 : 1+hLen]
+	maskedDB := em[1+hLen:]
+
+	seedMask := mgf1(maskedDB, hLen)
+	seed := xorBytes(maskedSeed, seedMask)
+
+	dbMask := mgf1(seed, len(maskedDB))
+	db := xorBytes(maskedDB, dbMask)
+
+	// Validate the hash of the label
+	if !equal(db[:hLen], lHash[:]) {
+		return nil, fmt.Errorf("decryption error")
+	}
+
+	// Remove the padding
+	for i := hLen; i < len(db); i++ {
+		if db[i] == 0x01 {
+			return db[i+1:], nil
+		}
+	}
+
+	return nil, fmt.Errorf("decryption error")
+}
+
+// rsaDecrypt performs the RSA decryption: message = (ciphertext^d) mod n
+func rsaDecrypt(ciphertext *big.Int, d, n *big.Int) *big.Int {
+	m := new(big.Int).Exp(ciphertext, d, n)
+	return m
+}
+
+// DecryptOAEP manually implements the RSA-OAEP decryption.
+func DecryptOAEP(ciphertext []byte, label []byte, privKey *rsa.PrivateKey) ([]byte, error) {
+	k := (privKey.N.BitLen() + 7) / 8
+
+	// Convert ciphertext to a big integer
+	c := new(big.Int).SetBytes(ciphertext)
+
+	// Perform RSA decryption
+	m := rsaDecrypt(c, privKey.D, privKey.N)
+
+	// Convert the decrypted message to bytes
+	em := m.Bytes()
+
+	// Ensure the decrypted message is the correct length
+	if len(em) < k {
+		paddedEm := make([]byte, k)
+		copy(paddedEm[k-len(em):], em)
+		em = paddedEm
+	}
+
+	// Unpad the message using OAEP
+	message, err := oaepUnpad(em, label, k)
+	if err != nil {
+		return nil, err
+	}
+
+	return message, nil
+}
+
+// Helper function to check if two byte slices are equal
+func equal(a, b []byte) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
