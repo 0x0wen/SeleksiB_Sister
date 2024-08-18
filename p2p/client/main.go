@@ -110,25 +110,6 @@ func showPeerEntryForm(window fyne.Window) {
 	peerEntryForm := widget.NewForm(
 		widget.NewFormItem("Peer Username", peerUsernameEntry),
 	)
-	peerUsernameEntry.OnSubmitted = func (peerUsername string){
-		status, peerIP := find(peerUsername)
-		if status {
-			peer = createConnection(peerIP)
-			go func() {
-				err := sendToPeer(fmt.Sprintf("CONNECT %s %s\n", myUsername, myAddress))
-				handleErr(err)
-				err = sendToPeer(fmt.Sprintf("PUBLIC_KEY %s %d\n", publicKey.N.Text(16), publicKey.E))
-				handleErr(err)
-				messages = retrieveChatHistory(myUsername, peerUsername)
-			}()
-			fmt.Print("Connected to ", peerUsername, "\n")
-			go receiveMessage(peer)
-			showChatWindow(window)
-		} else {
-			messageLabel.SetText("Peer not found!")
-		}
-		peerUsernameEntry.SetText("")
-	}
 	peerEntryForm.OnSubmit = func() {
 		fmt.Println("Peer Username Submitted:", peerUsernameEntry.Text)
 		peerUsername = peerUsernameEntry.Text
@@ -250,6 +231,7 @@ func showChatWindow(window fyne.Window) {
 			senderLabel = widget.NewLabelWithStyle(sender, fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
 			messageLabel = widget.NewLabelWithStyle(message, fyne.TextAlignLeading, fyne.TextStyle{Bold: false})	
 		}
+		messageLabel.Wrapping = fyne.TextWrapWord
 		messageBubble := container.NewVBox(senderLabel, messageLabel)
 		return messageBubble
 	}
@@ -276,22 +258,22 @@ func showChatWindow(window fyne.Window) {
 		},
 	)
 
-	messageList.Resize(fyne.NewSize(700, 450))
+	messageList.Resize(fyne.NewSize(500, 450))
 	messageList.ScrollToBottom()
 	inputSection := container.NewWithoutLayout(chatInput, sendButton)
-	chatInput.Resize(fyne.NewSize(600, 50))
+	chatInput.Resize(fyne.NewSize(400, 50))
 	chatInput.Move(fyne.NewPos(0, 0))
 	sendButton.Resize(fyne.NewSize(100, 50))
-	sendButton.Move(fyne.NewPos(600, 0))
+	sendButton.Move(fyne.NewPos(400, 0))
 	inputSection.Move(fyne.NewPos(0, 450))
-	inputSection.Resize(fyne.NewSize(700, 50))
+	inputSection.Resize(fyne.NewSize(500, 50))
 	messageContainer := container.NewWithoutLayout(
 		messageList,
 		inputSection,
 	)
 
 	window.SetContent(messageContainer)
-	window.Resize(fyne.NewSize(700, 500))
+	window.Resize(fyne.NewSize(500, 500))
 }
 
 
@@ -338,51 +320,6 @@ func showRegisterForm(window fyne.Window) *fyne.Container {
         }),
     )
 }
-// func main() {
-	// var command string
-	// for {
-	// 	fmt.Println("Commands:")
-	// 	fmt.Println("REGISTER - Register a new user")
-	// 	fmt.Println("LOGIN - Log in a user")
-	// 	fmt.Println("FIND - Find the IP of a user")
-	// 	fmt.Println("Enter command: ")
-	// 	fmt.Scanln(&command)
-	// 	command := strings.ToUpper(command)
-	// 	switch command {
-	// 	case "REGISTER":
-	// 		var username string
-	// 		var password string
-	// 		fmt.Println("Enter username: ")
-	// 		fmt.Scanln(&username)
-	// 		fmt.Println("Enter password: ")
-	// 		fmt.Scanln(&password)
-	// 		if register(username, password) {
-	// 			fmt.Println("Registered!")
-	// 		} else {
-	// 			fmt.Println("Username taken! Register failed.")
-	// 		}
-	// 	case "LOGIN":
-	// 		var username string
-	// 		var password string
-	// 		fmt.Println("Enter username: ")
-	// 		fmt.Scanln(&username)
-	// 		fmt.Println("Enter password: ")
-	// 		fmt.Scanln(&password)
-	// 		status, ip := login(username, password)
-	// 		if status {
-	// 			fmt.Println("Logged in!")
-	// 			myUsername = username
-	// 			myAddress = ip
-	// 			go startListening()
-	// 			handleChat()
-	// 		} else {
-	// 			fmt.Println("Wrong credentials! Login failed.")
-	// 		}
-	// 	default:
-	// 		fmt.Println("Unknown command:", command)
-	// 	}
-	// }
-// }
 
 func connectToServer() (net.Conn, error) {
 	conn, err := net.Dial("tcp", serverAddress)

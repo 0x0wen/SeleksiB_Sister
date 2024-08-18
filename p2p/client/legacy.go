@@ -90,3 +90,49 @@ func inputMessage() {
 
 	}
 }
+
+// func main() {
+	// var command string
+	// for {
+	// 	fmt.Println("Commands:")
+	// 	fmt.Println("REGISTER - Register a new user")
+	// 	fmt.Println("LOGIN - Log in a user")
+	// 	fmt.Println("FIND - Find the IP of a user")
+	// 	fmt.Println("Enter command: ")
+	// 	fmt.Scanln(&command)
+	// 	command := strings.ToUpper(command)
+	// 	switch command {
+	// 	case "REGISTER":
+	// 		var username string
+	// 		var password string
+	// 		fmt.Println("Enter username: ")
+	// 		fmt.Scanln(&username)
+	// 		fmt.Println("Enter password: ")
+	// 		fmt.Scanln(&password)
+	// 		if register(username, password) {
+	// 			fmt.Println("Registered!")
+	// 		} else {
+	// 			fmt.Println("Username taken! Register failed.")
+	// 		}
+	// 	case "LOGIN":
+	// 		var username string
+	// 		var password string
+	// 		fmt.Println("Enter username: ")
+	// 		fmt.Scanln(&username)
+	// 		fmt.Println("Enter password: ")
+	// 		fmt.Scanln(&password)
+	// 		status, ip := login(username, password)
+	// 		if status {
+	// 			fmt.Println("Logged in!")
+	// 			myUsername = username
+	// 			myAddress = ip
+	// 			go startListening()
+	// 			handleChat()
+	// 		} else {
+	// 			fmt.Println("Wrong credentials! Login failed.")
+	// 		}
+	// 	default:
+	// 		fmt.Println("Unknown command:", command)
+	// 	}
+	// }
+// }
