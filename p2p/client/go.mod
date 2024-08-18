@@ -2,7 +2,10 @@ module p2pchat
 
 go 1.22.2
 
-require fyne.io/fyne/v2 v2.5.0
+require (
+	fyne.io/fyne/v2 v2.5.0
+	github.com/mattn/go-sqlite3 v1.14.22
+)
 
 require (
 	fyne.io/systray v1.11.0 // indirect
@@ -21,7 +24,6 @@ require (
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/jeandeaual/go-locale v0.0.0-20240223122105-ce5225dcaa49 // indirect
 	github.com/jsummers/gobmp v0.0.0-20230614200233-a9de23ed2e25 // indirect
-	github.com/mattn/go-sqlite3 v1.14.22 // indirect
 	github.com/nicksnyder/go-i18n/v2 v2.4.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rymdport/portal v0.2.3 // indirect
