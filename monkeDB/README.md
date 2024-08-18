@@ -1,6 +1,7 @@
+![Logo](images/erlich.png)
 # 7. monkeDB 
 MySQL Docker database replication using binary log replication and master-slave mechanism.
-![alt text](illustration.gif)
+![Illustration](images/illustration.gif)
 
 ## I. How does it work?
 The binary log contains “events” that describe database changes such as table creation operations or changes to table data. For replication, the binary log on a replication source server provides a record of the data changes to be sent to replicas. The source sends the information contained in its binary log to its replicas, which reproduce those transactions to make the same data changes that were made on the source.
@@ -40,7 +41,7 @@ Here are the steps to setup the databases:
     SHOW MASTER STATUS;
 ```
 7. Note the file name and the position. For example (file name and position might differ):
-![Binary Log](binlog.png)
+![Binary Log](images/binlog.png)
 File name: 'binlog.000002'\
 Position: 157
 8. Adjust the MASTER_LOG_FILE and MASTER_LOG_POS variables in the slave.sql
@@ -92,7 +93,7 @@ Copying: Does not manage conflicts since it is a one-time process or requires ma
 
 
 ## IV. Demonstration
-[GOD OF WEALTH CAI SHEN POWERFUL MANTRA FOR WEALTH ABUNDANCE MONEY LUCK PROSPERITY SUCCESS PROSPERITY](https://www.youtube.com/watch?v=U35fi2RIKnc)
+[Setup a Master-Slave DB Replication with Docker and MySQL](https://www.youtube.com/watch?v=tp0bz5YybHs)
 
 
 ## V. References
