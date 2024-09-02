@@ -1,4 +1,4 @@
-const Sister = require('./class');
+const Sister = require('./sister');
 const app = new Sister();
 const Controller = require('./controller');
 

@@ -13,9 +13,9 @@ const getDataByName = async (name) => {
     return data;
 }
 
-const createData = async (name,car,age) => {
+const createData = async (name,car,age,file) => {
     console.log("Creating data...");
-    const data = {name:name, car:car, age:age};
+    const data = {name:name, car:car, age:age,file:file};
     return data;
 };
 
