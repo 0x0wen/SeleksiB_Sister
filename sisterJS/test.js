@@ -17,7 +17,7 @@ async function testGetParam() {
     const response = await axios.get('http://localhost:3000/nilai-akhir/Ahmed');
     console.log('GET /nilai-akhir/Ahmed Response:', response.data);
   } catch (error) {
-    console.error('GET /nilai-akhir/Ahmed Error:', error.response ? error.response.data : error.message);
+    console.error('GET /nilai-akhir/Ahmed Error:', error);
   }
 }
 // Function to test POST request
@@ -38,7 +38,7 @@ async function testPost() {
       });
     console.log('POST /user Response:', response.data);
   } catch (error) {
-    console.error('POST /user Error:', error.response ? error.response.data : error.message);
+    console.error('POST /user Error:', error);
   }
 }
 
@@ -56,7 +56,7 @@ async function testPostFile() {
       })
     console.log('POST /user Response:', response.data);
   } catch (error) {
-    console.error('POST /user Error:', error.response ? error.response.data : error.message);
+    console.error('POST /user Error:', error);
   }
 }
 
@@ -72,7 +72,7 @@ async function testPut() {
     });
     console.log('PUT /user/123 Response:', response.data);
   } catch (error) {
-    console.error('PUT /user/123 Error:', error.response ? error.response.data : error.message);
+    console.error('PUT /user/123 Error:', error);
   }
 }
 
@@ -82,7 +82,7 @@ async function testDelete() {
     const response = await axios.delete('http://localhost:3000/delete/junaidi');
     console.log('DELETE /user/123 Response:', response.data);
   } catch (error) {
-    console.error('DELETE /user/123 Error:', error.response ? error.response.data : error.message);
+    console.error('DELETE /user/123 Error:', error);
   }
 }
 
@@ -91,12 +91,9 @@ async function runTests() {
   const startTime = Date.now();
   let end;
 
-  await Promise.all([testGet(),
-  testGetParam(),
-  testPost(),
+  await Promise.all([
   testPostFile(),
-  testPut(),
-  testDelete(),])
+])
 
   endTime = Date.now();
   console.log(`All tests completed in ${endTime - startTime} milliseconds.`);

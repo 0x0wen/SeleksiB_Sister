@@ -39,10 +39,10 @@ const createIdentity = async (req, res) => {
 
 const createIdentityFile = async (req, res) => {
     try{
-        const file  = req.files[0];
+        const file  = req.body.image;
         const data = await Service.handleFile(file);
-        res.write('HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n');
-        res.end(data);
+        console.log('ahmed',req);
+        res.sendMultipartResponse({name:'habibi'},data.path);
     }catch(error){
         console.log(error); 
         res.end(stringifyJSON(error));

@@ -1,6 +1,3 @@
-
-
-
 const getAllData = async () => {
     console.log("Getting all data...");
     const data = [{name:"John Doe", car:"Toyota", age:30}, {name:"Jane Doe", car:"Honda", age:25}];
