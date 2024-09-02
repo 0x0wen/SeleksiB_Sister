@@ -18,7 +18,7 @@ function middlewareFunction2(req, res, next) {
 app.get('/nilai-akhir',  Controller.getAllIdentity);
 
 // Define a GET route with middleware and a controller
-app.get('/nilai-akhir/:name',  Controller.getIdentityByName);
+app.get('/product/:name',  Controller.getIdentityByName);
 
 app.post('/submit/:id', middlewareFunction1, middlewareFunction2, Controller.createIdentity);
 app.post('/submit-file/:id', middlewareFunction1, middlewareFunction2, Controller.createIdentityFile);

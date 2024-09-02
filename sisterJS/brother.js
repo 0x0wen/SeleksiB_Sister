@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { stringifyJSON } = require('./helpers');
 
 class Brother {
     constructor(socket) {
@@ -64,7 +65,7 @@ class Brother {
         // Construct the JSON part
         const jsonPart = `${startBoundary}Content-Disposition: form-data; name="jsonData"\r\n` +
                          `Content-Type: application/json\r\n\r\n` +
-                         `${JSON.stringify(jsonData)}\r\n`;
+                         `${stringifyJSON(jsonData)}\r\n`;
 
         // Read the file
         const resolvedPath = path.resolve(filePath);

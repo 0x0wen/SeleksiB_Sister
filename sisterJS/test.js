@@ -8,7 +8,6 @@ async function testGet() {
     const response = await axios.get('http://localhost:3000/nilai-akhir?name=ahmad&age=23');
     console.log('GET /nilai-akhir/123 Response:', response.data);
   } catch (error) {
-    console.log('uhuy')
     console.error('GET /nilai-akhir/123 Error:', error );
   }
 }

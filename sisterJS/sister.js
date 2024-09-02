@@ -2,6 +2,7 @@ const net = require('net');
 const path_lib = require('path');
 const fs = require('fs');
 const Brother = require('./brother');
+const { parseJSON } = require('./helpers');
 
 class Sister {
   constructor() {
@@ -26,7 +27,6 @@ class Sister {
       // if the data sent is too large, it will be split into multiple chunks
       // so we need to accumulate the data until it's complete, then we can parse it
       accumulatedData += chunk.toString('binary');
-      console.log('accumulatedData', accumulatedData);
       // Check if the end of headers and start of body is present
       if (accumulatedData.includes('\r\n\r\n')) {
         // Get Content-Length from headers if available
@@ -35,13 +35,8 @@ class Sister {
         if (contentLengthMatch) {
             const contentLength = parseInt(contentLengthMatch[1], 10);
             // Check if we have received enough data (headers + body)
-            console.log('data length', accumulatedData.length);
-            console.log('content length', contentLength);
-            console.log('header length', headerPart.length);
             if (accumulatedData.length >= contentLength + headerPart.length + 4) {
-                console.log('Received complete request:', accumulatedData);
                 const request = this.parseRequest(accumulatedData, response);
-                console.log('ahmad',request)
                 this.executeMiddlewares(request, () => {
                     this.handleRequest(request);
                 });
@@ -75,7 +70,6 @@ class Sister {
 
   // Parse the incoming request
   parseRequest(data, response) {
-    console.log('mentahan', data);
     // Split the request into headers and body
     const [headerPart, ...rest] = data.split('\r\n\r\n');
     const bodyPart = rest.join('\r\n\r\n');
@@ -111,16 +105,12 @@ class Sister {
 
         // Split body by boundary
         const parts = bodyPart.split(`--${boundary}`);
-        console.log("ini parts",parts);
         // Process each part
         parts.forEach(part => {
             // Skip empty parts or the final boundary marker
             if (!part) return;
-            console.log('part', part);
             // Extract headers and body from the part
             const [partHeaders, partBody] = part.split('\r\n\r\n');
-            console.log('partHeaders', partHeaders);
-            console.log('partBody', partBody);
             const partHeaderLines = partHeaders.split('\r\n');
 
             // Extract Content-Disposition for file information
@@ -162,7 +152,7 @@ class Sister {
         });
     } else if (contentType === 'application/json') {
         try {
-            body = JSON.parse(bodyPart);
+            body = parseJSON(bodyPart);
         } catch (error) {
             console.error('Failed to parse JSON body:', error);
         }

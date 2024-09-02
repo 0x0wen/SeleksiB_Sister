@@ -4,7 +4,6 @@ const { stringifyJSON } = require('./helpers.js');
 
 const getAllIdentity = async (req, res) => {
     try{
-        console.log("ni paramnya abangkuh:", stringifyJSON(req.queryParams));
         const data = await Service.getAllData();
         res.write('HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n');
         res.end(stringifyJSON(data));
